@@ -5,7 +5,10 @@ class BootScene extends Phaser.Scene {
     super('BootScene');
   }
   preload() {}
-  create() {}
+  create() {
+    // Go directly to game selection for easier access to games
+    this.scene.start('GameSelectScene');
+  }
 }
 
 export default BootScene;
