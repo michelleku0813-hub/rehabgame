@@ -54,9 +54,11 @@ class Game01Logic {
         targetIndex = Math.floor(Math.random() * (this.gridSize * this.gridSize));
       } while (targetIndex === this.currentTarget && this.gridSize > 1);
     } else {
-      // 25% chance: Blue - center target (fixed)
+      // 25% chance: Blue - appears at random position, but player must click center
       targetType = 'blue';
-      targetIndex = 4; // Center cell in 3x3 grid (index 4)
+      do {
+        targetIndex = Math.floor(Math.random() * (this.gridSize * this.gridSize));
+      } while (targetIndex === this.currentTarget && this.gridSize > 1);
     }
 
     // Generate red cells for red rounds (cells to avoid)
@@ -107,21 +109,13 @@ class Game01Logic {
         return { result: false, type: 'green_miss' };
       }
     } else if (this.currentTargetType === 'red') {
-      // Red: must NOT click the red target
-      if (index === this.currentTarget) {
-        this.roundHistory.push({ type: 'red', result: false, reactionTime: reactionTime });
-        return { result: false, type: 'red_target_clicked' };
-      } else {
-        this.score++;
-        this.correctCounts.red++;
-        this.reactionTimes.push(reactionTime);
-        this.reactionTimesByType.red.push(reactionTime);
-        this.roundHistory.push({ type: 'red', result: true, reactionTime: reactionTime });
-        return { result: true, type: 'red_avoided' };
-      }
+      // Red: must NOT tap ANY square during red round
+      // ANY click during red round is wrong
+      this.roundHistory.push({ type: 'red', result: false, reactionTime: reactionTime });
+      return { result: false, type: 'red_any_click' };
     } else if (this.currentTargetType === 'blue') {
-      // Blue: must click the center target
-      if (index === this.currentTarget) {
+      // Blue: blue square appears randomly, but must ALWAYS click center (index 4)
+      if (index === 4) { // Always center square
         this.score++;
         this.reactionTimes.push(reactionTime);
         this.correctCounts.blue++;
@@ -141,12 +135,21 @@ class Game01Logic {
   recordMiss() {
     if (!this.roundComplete) {
       this.roundComplete = true;
-      // Record null for missed rounds (no reaction time)
-      this.reactionTimes.push(null);
 
-      // Record the miss in round history
-      this.reactionTimesByType[this.currentTargetType].push(null);
-      this.roundHistory.push({ type: this.currentTargetType, result: false, reactionTime: null });
+      // For red rounds, timeout (no click) is CORRECT
+      if (this.currentTargetType === 'red') {
+        this.score++;
+        this.correctCounts.red++;
+        this.roundHistory.push({ type: 'red', result: true, reactionTime: null });
+        // Note: no reaction time recorded for red timeouts since no click occurred
+      } else {
+        // For green/blue rounds, timeout is a miss
+        this.reactionTimesByType[this.currentTargetType].push(null);
+        this.roundHistory.push({ type: this.currentTargetType, result: false, reactionTime: null });
+      }
+
+      // Always record null reaction time in main array for timeouts
+      this.reactionTimes.push(null);
     }
   }
 

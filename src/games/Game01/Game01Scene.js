@@ -72,9 +72,9 @@ class Game01Scene extends Phaser.Scene {
 
     // Instructions
     const instructions = [
-      '🟢 Green: Click fast!',
-      '🔴 Red: Don\'t click!',
-      '🔵 Blue: Click center!'
+      '🟢 Green: Tap it quickly!',
+      '🔴 Red: Don\'t tap anything!',
+      '🔵 Blue: Always tap center!'
     ];
 
     instructions.forEach((text, index) => {
@@ -150,11 +150,19 @@ class Game01Scene extends Phaser.Scene {
       // Set timeout for round
       this.gameTimer = this.time.delayedCall(this.logic.blinkTime, () => {
         if (!this.logic.isRoundComplete()) {
-          // Time's up - miss based on target type
+          // Time's up - result depends on target type
           this.logic.recordMiss();
-          this.showFeedback(targetData.target, 'timeout', targetData.type);
-          this.updateUI();
-          this.scheduleNextRound();
+
+          // For red rounds, timeout is SUCCESS - go directly to next round
+          if (targetData.type === 'red') {
+            // No feedback animation for red timeouts - directly proceed
+            this.updateUI();
+            this.scheduleNextRound();
+          } else {
+            this.showFeedback(targetData.target, 'timeout', targetData.type);
+            this.updateUI();
+            this.scheduleNextRound();
+          }
         }
       });
     }
@@ -261,8 +269,8 @@ class Game01Scene extends Phaser.Scene {
       });
     } else if (feedbackType === 'miss') {
       // Error feedback based on context
-      if (targetType === 'red_clicked') {
-        fillColor = 0x8b0000; // Dark red - clicked forbidden red cell
+      if (targetType === 'red_any_click') {
+        fillColor = 0x8b0000; // Dark red - clicked during red round
         strokeColor = 0xff0000;
       } else {
         fillColor = 0xff4500; // Orange red - general miss
